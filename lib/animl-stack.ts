@@ -34,7 +34,8 @@ export class AnimlStack extends cdk.Stack {
       code: lambda.Code.asset('watchlist-lambda'),
       handler: 'index.handler',
       environment: {
-        MAL_USER_TABLE_NAME: malUserTable.tableName
+        MAL_USER_TABLE_NAME: malUserTable.tableName,
+        REGION: this.region
       }
     });
     new SqsEventSource(malUserQueue).bind(malUserQueueConsumer)
@@ -48,7 +49,8 @@ export class AnimlStack extends cdk.Stack {
       code: lambda.Code.asset('watched-lambda'),
       handler: 'index.handler',
       environment: {
-        WATCHLIST_BUCKET: malWatchedBucket.bucketName
+        WATCHLIST_BUCKET: malWatchedBucket.bucketName,
+        REGION: this.region
       }
     });
     new DynamoEventSource(malUserTable, {
