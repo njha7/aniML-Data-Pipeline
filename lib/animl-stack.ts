@@ -35,7 +35,6 @@ export class AnimlStack extends cdk.Stack {
       handler: 'index.handler',
       environment: {
         MAL_USER_TABLE_NAME: malUserTable.tableName,
-        REGION: this.region
       }
     });
     new SqsEventSource(malUserQueue).bind(malUserQueueConsumer)
@@ -50,7 +49,6 @@ export class AnimlStack extends cdk.Stack {
       handler: 'index.handler',
       environment: {
         WATCHLIST_BUCKET: malWatchedBucket.bucketName,
-        REGION: this.region
       }
     });
     new DynamoEventSource(malUserTable, {
