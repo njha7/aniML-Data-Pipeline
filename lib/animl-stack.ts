@@ -4,6 +4,9 @@ import lambda = require('@aws-cdk/aws-lambda');
 import sqs = require('@aws-cdk/aws-sqs');
 import s3 = require('@aws-cdk/aws-s3');
 import { SqsEventSource, DynamoEventSource } from '@aws-cdk/aws-lambda-event-sources';
+import { Metric } from '@aws-cdk/aws-cloudwatch';
+
+const CLOUDWATCH_NAMESPACE = 'AniML'
 
 export class AnimlStack extends cdk.Stack {
   constructor(scope: cdk.Construct, id: string, props?: cdk.StackProps) {
@@ -33,8 +36,12 @@ export class AnimlStack extends cdk.Stack {
       runtime: lambda.Runtime.NodeJS810,
       code: lambda.Code.asset('watchlist-lambda'),
       handler: 'index.handler',
+      logRetentionDays: 14,
+      timeout: 900,
+      memorySize: 256,
       environment: {
         MAL_USER_TABLE_NAME: malUserTable.tableName,
+        NAMESPACE: CLOUDWATCH_NAMESPACE
       }
     });
     new SqsEventSource(malUserQueue).bind(malUserQueueConsumer)
@@ -47,8 +54,10 @@ export class AnimlStack extends cdk.Stack {
       runtime: lambda.Runtime.NodeJS810,
       code: lambda.Code.asset('watched-lambda'),
       handler: 'index.handler',
+      logRetentionDays: 14,
       environment: {
         WATCHLIST_BUCKET: malWatchedBucket.bucketName,
+        NAMESPACE: CLOUDWATCH_NAMESPACE
       }
     });
     new DynamoEventSource(malUserTable, {
@@ -59,6 +68,8 @@ export class AnimlStack extends cdk.Stack {
     // Allow queue consumer to read messages and r/w to ddb
     malUserQueue.grantConsumeMessages(malUserQueueConsumer);
     malUserTable.grantFullAccess(malUserQueueConsumer);
+    // Allow the function to put metrics
+    Metric.grantPutMetricData(malUserQueueConsumer);
     // Allow stream consumer to read ddb stream and write to s3
     malUserTable.grantStreamRead(malUserTableStreamConsumer);
     malWatchedBucket.grantPut(malUserTableStreamConsumer);
